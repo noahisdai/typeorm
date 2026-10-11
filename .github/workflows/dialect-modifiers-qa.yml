@@ -1,0 +1,76 @@
+name: Dialect modifiers fork QA
+on:
+  push:
+    branches: [qa/dialect-modifiers-5ed655a]
+permissions:
+  contents: read
+concurrency:
+  group: dialect-modifiers-qa-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  focused-databases:
+    if: github.repository == 'xue-ding-e/typeorm'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: ghcr.io/typeorm/docker:postgres-17.9-postgis-3.6.2-pgvector-0.8.2
+        ports: ["5432:5432"]
+        env:
+          POSTGRES_USER: username
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: typeorm
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s --health-timeout 5s --health-retries 10
+      mysql:
+        image: mysql:8.4
+        ports: ["3306:3306"]
+        env:
+          MYSQL_ROOT_PASSWORD: admin
+          MYSQL_ROOT_HOST: "%"
+          MYSQL_DATABASE: typeorm
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -padmin"
+          --health-interval 10s --health-timeout 5s --health-retries 10
+      mariadb:
+        image: mariadb:10.11.16
+        ports: ["3307:3306"]
+        env:
+          MARIADB_ROOT_PASSWORD: admin
+          MARIADB_DATABASE: typeorm
+        options: >-
+          --health-cmd "healthcheck.sh --connect --innodb_initialized"
+          --health-interval 10s --health-timeout 5s --health-retries 10
+    defaults:
+      run:
+        working-directory: packages/typeorm
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: 5ed655a375bc43e4f6c09353c65bcea105ec0633
+          persist-credentials: false
+      - name: Verify product identity
+        run: test "$(git rev-parse HEAD)" = 5ed655a375bc43e4f6c09353c65bcea105ec0633
+      - uses: ./.github/actions/setup-node
+        with:
+          node-version: "24"
+      - name: Compile unchanged product source and tests
+        run: pnpm run compile
+      - name: Configure isolated test databases
+        run: |
+          jq 'map(select(.type | IN("postgres", "mysql", "mariadb", "better-sqlite3", "sqljs")))' ormconfig.sample.json > ormconfig.json
+          mkdir -p temp
+      - name: Related unit regression tests
+        run: >-
+          pnpm exec mocha --no-config --timeout 90000
+          --require ./build/compiled/test/utils/test-setup.js
+          'build/compiled/test/unit/*dialect-type*.test.js'
+      - name: Native columns and schema regression tests
+        run: >-
+          pnpm exec mocha --no-config --timeout 90000 --exit
+          --require ./build/compiled/test/utils/test-setup.js
+          'build/compiled/test/functional/columns/**/*.test.js'
+          'build/compiled/test/functional/schema-builder/**/*.test.js'
+          'build/compiled/test/functional/database-schema/column-length/**/*.test.js'
+          'build/compiled/test/functional/database-schema/column-collation/**/*.test.js'
