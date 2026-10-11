@@ -21,7 +21,7 @@ jobs:
           POSTGRES_PASSWORD: password
           POSTGRES_DB: typeorm
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U username -d typeorm"
           --health-interval 10s --health-timeout 5s --health-retries 10
       mysql:
         image: mysql:8.4
@@ -48,10 +48,10 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: 5ed655a375bc43e4f6c09353c65bcea105ec0633
+          ref: 44d1b156b05379ea448232cc4c70b0718a286bf7
           persist-credentials: false
       - name: Verify product identity
-        run: test "$(git rev-parse HEAD)" = 5ed655a375bc43e4f6c09353c65bcea105ec0633
+        run: test "$(git rev-parse HEAD)" = 44d1b156b05379ea448232cc4c70b0718a286bf7
       - uses: ./.github/actions/setup-node
         with:
           node-version: "24"
