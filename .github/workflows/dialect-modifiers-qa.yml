@@ -48,13 +48,16 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: 44d1b156b05379ea448232cc4c70b0718a286bf7
+          ref: de58583be0efef3f7dba305b872fcfd490393261
           persist-credentials: false
       - name: Verify product identity
-        run: test "$(git rev-parse HEAD)" = 44d1b156b05379ea448232cc4c70b0718a286bf7
+        run: test "$(git rev-parse HEAD)" = de58583be0efef3f7dba305b872fcfd490393261
       - uses: ./.github/actions/setup-node
         with:
           node-version: "24"
+      - name: Check repository formatting with locked dependencies
+        working-directory: .
+        run: pnpm run format:ci
       - name: Compile unchanged product source and tests
         run: pnpm run compile
       - name: Configure isolated test databases
