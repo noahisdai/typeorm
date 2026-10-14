@@ -844,6 +844,19 @@ export class MysqlDriver implements Driver {
         }
 
         if (typeof defaultValue === "number") {
+            const type = this.normalizeType(columnMetadata)
+            // A dialectTypes override to a non-numeric type has no scale; keep
+            // the value instead of rounding it to an integer.
+            if (
+                columnMetadata.scale === undefined &&
+                columnMetadata.dialectTypes?.[this.options.type] !==
+                    undefined &&
+                !this.withScaleColumnTypes.includes(type as ColumnType) &&
+                !["tinyint", "smallint", "mediumint", "int", "bigint"].includes(
+                    type,
+                )
+            )
+                return `'${defaultValue}'`
             return `'${defaultValue.toFixed(columnMetadata.scale)}'`
         }
 

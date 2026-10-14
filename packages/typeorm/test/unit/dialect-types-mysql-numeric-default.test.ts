@@ -62,6 +62,16 @@ describe("ColumnMetadata > dialect type MySQL numeric defaults", () => {
                 ).to.be.empty
             })
         }
+        it(`${engine} rounds the default for an integer override`, async () => {
+            const f = await fixture(engine, {
+                type: "decimal",
+                precision: 4,
+                scale: 2,
+                default: 1.23,
+                dialectTypes: { [engine]: "int" },
+            })
+            expect(f.tableColumn.default).to.equal("'1'")
+        })
         it(`${engine} formats the default with a scale-bearing override`, async () => {
             const f = await fixture(engine, {
                 type: "decimal",
