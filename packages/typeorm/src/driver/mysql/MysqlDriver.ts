@@ -14,6 +14,7 @@ import type { View } from "../../schema-builder/view/View"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { mysqlTimestampPrecision } from "../../util/MysqlTimestampPrecision"
 import { OrmUtils } from "../../util/OrmUtils"
 import { VersionUtils } from "../../util/VersionUtils"
 import type { Driver } from "../Driver"
@@ -826,8 +827,9 @@ export class MysqlDriver implements Driver {
         }
 
         if (typeof defaultValue === "function") {
-            const value = defaultValue()
-            return this.normalizeDatetimeFunction(value)
+            const value = this.normalizeDatetimeFunction(defaultValue())
+            this.validateOverrideTimestampDefault(columnMetadata, value)
+            return value
         }
 
         if (
@@ -1291,6 +1293,37 @@ export class MysqlDriver implements Driver {
         }
 
         return columnMetadata.isNullable === tableColumn.isNullable
+    }
+
+    /**
+     * Rejects a CURRENT_TIMESTAMP default whose precision conflicts with the
+     * physical precision of a dialectTypes override. MySQL requires the same
+     * precision; MariaDB keeps a less precise default but rewrites a more
+     * precise one to the column precision.
+     *
+     * @param columnMetadata
+     * @param value Normalized default expression.
+     */
+    protected validateOverrideTimestampDefault(
+        columnMetadata: ColumnMetadata,
+        value?: string,
+    ) {
+        if (columnMetadata.dialectTypes?.[this.options.type] === undefined)
+            return
+        const type = this.normalizeType(columnMetadata)
+        if (type !== "datetime" && type !== "timestamp") return
+        const defaultPrecision = mysqlTimestampPrecision(value)
+        if (defaultPrecision === undefined) return
+        const precision = columnMetadata.precision ?? 0
+        const mariadb = this.options.type === "mariadb"
+        if (
+            mariadb
+                ? defaultPrecision > precision
+                : defaultPrecision !== precision
+        )
+            throw new TypeORMError(
+                `Column "${columnMetadata.propertyName}" has an incompatible dialectTypes override for "${this.options.type}": DEFAULT CURRENT_TIMESTAMP precision must ${mariadb ? "not exceed" : "match"} the physical column precision (${precision}).`,
+            )
     }
 
     /**

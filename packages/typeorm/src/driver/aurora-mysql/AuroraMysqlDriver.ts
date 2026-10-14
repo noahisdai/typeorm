@@ -12,6 +12,7 @@ import type { View } from "../../schema-builder/view/View"
 import { ApplyValueTransformers } from "../../util/ApplyValueTransformers"
 import { DateUtils } from "../../util/DateUtils"
 import { InstanceChecker } from "../../util/InstanceChecker"
+import { mysqlTimestampPrecision } from "../../util/MysqlTimestampPrecision"
 import { OrmUtils } from "../../util/OrmUtils"
 import type { Driver } from "../Driver"
 import { DriverUtils } from "../DriverUtils"
@@ -720,6 +721,29 @@ export class AuroraMysqlDriver implements Driver {
     }
 
     /**
+     * Rejects a CURRENT_TIMESTAMP default whose precision differs from the
+     * physical precision of a dialectTypes override.
+     *
+     * @param columnMetadata
+     * @param value Normalized default expression.
+     */
+    protected validateOverrideTimestampDefault(
+        columnMetadata: ColumnMetadata,
+        value?: string,
+    ) {
+        if (columnMetadata.dialectTypes?.[this.options.type] === undefined)
+            return
+        const type = this.normalizeType(columnMetadata)
+        if (type !== "datetime" && type !== "timestamp") return
+        const defaultPrecision = mysqlTimestampPrecision(value)
+        const precision = columnMetadata.precision ?? 0
+        if (defaultPrecision !== undefined && defaultPrecision !== precision)
+            throw new TypeORMError(
+                `Column "${columnMetadata.propertyName}" has an incompatible dialectTypes override for "${this.options.type}": DEFAULT CURRENT_TIMESTAMP precision must match the physical column precision (${precision}).`,
+            )
+    }
+
+    /**
      * Normalizes "default" value of the column.
      *
      * @param columnMetadata
@@ -732,7 +756,9 @@ export class AuroraMysqlDriver implements Driver {
         }
 
         if (typeof defaultValue === "function") {
-            return defaultValue()
+            const value = defaultValue()
+            this.validateOverrideTimestampDefault(columnMetadata, value)
+            return value
         }
 
         if (

@@ -150,7 +150,7 @@ export class EntityMetadataValidator {
                             `Column "${column.propertyName}" of Entity "${entityMetadata.name}" is defined as enum, but missing "enum" or "enumName" properties.`,
                         )
                     if (
-                        (driver.options.type === "mysql" ||
+                        (DriverUtils.isMySQLFamily(driver) ||
                             driver.options.type === "aurora-mysql") &&
                         physicalColumn !== column &&
                         (normalizedColumn === "datetime" ||
