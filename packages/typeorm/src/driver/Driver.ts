@@ -110,6 +110,11 @@ export interface Driver {
     withMaxLengthColumnTypes?: ColumnType[]
 
     /**
+     * Gets list of column data types that support collation by a driver.
+     */
+    withCollationColumnTypes?: ColumnType[]
+
+    /**
      * Supported index types
      */
     supportedIndexTypes?: TableIndexTypes[]

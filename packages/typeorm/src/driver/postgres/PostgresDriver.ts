@@ -257,6 +257,18 @@ export class PostgresDriver implements Driver {
     ]
 
     /**
+     * Gets list of column data types that support collation by a driver.
+     */
+    withCollationColumnTypes: ColumnType[] = [
+        "character varying",
+        "varchar",
+        "character",
+        "char",
+        "text",
+        "citext",
+    ]
+
+    /**
      * Gets list of column data types that support precision by a driver.
      */
     withPrecisionColumnTypes: ColumnType[] = [

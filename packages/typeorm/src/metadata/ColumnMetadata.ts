@@ -38,14 +38,6 @@ const mysqlCharacterTypes = new Set<ColumnType>([
     "set",
 ])
 
-// Collatable types accepted by PostgresDriver after alias normalization.
-const postgresCollatableTypes = new Set<ColumnType>([
-    "character",
-    "character varying",
-    "text",
-    "citext",
-])
-
 /**
  * This metadata contains all information about entity's column.
  */
@@ -200,9 +192,8 @@ export class ColumnMetadata {
                 }
             }
             if (
-                (driver.options.type === "postgres" ||
-                    driver.options.type === "aurora-postgres") &&
-                !postgresCollatableTypes.has(normalizedType)
+                driver.withCollationColumnTypes &&
+                !driver.withCollationColumnTypes.includes(normalizedType)
             )
                 physical.collation = undefined
         }

@@ -217,6 +217,19 @@ export class CockroachDriver implements Driver {
     ]
 
     /**
+     * Gets list of column data types that support collation by a driver.
+     */
+    withCollationColumnTypes: ColumnType[] = [
+        "character varying",
+        "char varying",
+        "varchar",
+        "character",
+        "char",
+        "string",
+        "text",
+    ]
+
+    /**
      * Gets list of column data types that support precision by a driver.
      */
     withPrecisionColumnTypes: ColumnType[] = ["numeric", "decimal", "dec"]

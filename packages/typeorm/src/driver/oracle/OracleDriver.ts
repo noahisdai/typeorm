@@ -202,6 +202,19 @@ export class OracleDriver implements Driver {
     ]
 
     /**
+     * Gets list of column data types that support collation by a driver.
+     */
+    withCollationColumnTypes: ColumnType[] = [
+        "char",
+        "nchar",
+        "nvarchar2",
+        "varchar2",
+        "varchar",
+        "clob",
+        "nclob",
+    ]
+
+    /**
      * Gets list of column data types that support precision by a driver.
      */
     withPrecisionColumnTypes: ColumnType[] = [
