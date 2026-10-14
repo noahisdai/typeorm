@@ -102,7 +102,7 @@ describe("SqlServerDriver > output table dialect types", () => {
         const textParameter = driver.parametrizeValue(wideText, "漢字OUTPUT")
         expect(textParameter).to.be.instanceOf(MssqlParameter)
         expect(textParameter.type).to.equal("nvarchar")
-        expect(textParameter.params).to.deep.equal(["100"])
+        expect(textParameter.params).to.deep.equal([100])
 
         const amountParameter = driver.parametrizeValue(
             amount,
