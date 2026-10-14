@@ -192,8 +192,8 @@ export class ColumnMetadata {
                 }
             }
             if (
-                driver.withCollationColumnTypes &&
-                !driver.withCollationColumnTypes.includes(normalizedType)
+                driver.withCollationColumnTypes?.includes(normalizedType) ===
+                false
             )
                 physical.collation = undefined
         }
