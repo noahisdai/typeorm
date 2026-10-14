@@ -197,6 +197,20 @@ export class ColumnMetadata {
             )
                 physical.collation = undefined
         }
+        // MysqlDriver formats numeric defaults with the column scale. Keep the
+        // logical digits when a non-numeric physical type drops that scale.
+        const keepMysqlNumericDefault = (normalizedType: ColumnType) => {
+            if (
+                (driver.options.type === "mysql" ||
+                    driver.options.type === "mariadb") &&
+                typeof this.default === "number" &&
+                this.scale !== undefined &&
+                this.scale !== null &&
+                physical.scale === undefined &&
+                !mysqlUnsignedTypes.has(normalizedType)
+            )
+                physical.default = this.default.toFixed(this.scale)
+        }
 
         const parameterized =
             /^(.+?)\(\s*(\d+|max)\s*(?:,\s*(\d+)\s*)?\)$/i.exec(override.trim())
@@ -223,6 +237,7 @@ export class ColumnMetadata {
             } else if (!driver.withScaleColumnTypes.includes(normalizedType)) {
                 physical.scale = undefined
             }
+            keepMysqlNumericDefault(normalizedType)
             return physical
         }
 
@@ -244,6 +259,7 @@ export class ColumnMetadata {
             physical.length = "max"
             physical.precision = undefined
             physical.scale = undefined
+            keepMysqlNumericDefault(normalizedType)
             return physical
         }
         const firstParameter = Number(parameterized[2])
@@ -285,6 +301,7 @@ export class ColumnMetadata {
                 `Column "${this.propertyName}" has unsupported dialectTypes parameters for "${driver.options.type}"`,
             )
         }
+        keepMysqlNumericDefault(normalizedType)
         return physical
     }
 
